@@ -66,7 +66,35 @@ def seed():
         ("The Trevor Project (LGBTQ+)", "1-866-488-7386", "Text START to 678-678", "24/7 crisis intervention and suicide prevention for LGBTQ young people."),
         ("National Domestic Violence Hotline", "1-800-799-7233", "Text START to 88788", "24/7 support for anyone experiencing domestic violence or seeking help."),
         ("RAINN Sexual Assault Hotline", "1-800-656-4673", "N/A", "Confidential support for survivors of sexual assault and their loved ones."),
-        ("SAMHSA National Helpline", "1-800-662-4357", "N/A", "24/7 treatment referral and info for substance use and mental health disorders.")
+        ("SAMHSA National Helpline", "1-800-662-4357", "N/A", "24/7 treatment referral and info for substance use and mental health disorders."),
+
+        # --- VETERANS & MILITARY ---
+        ("Veterans Crisis Line", "988 (Press 1)", "Text 838255", 
+        "Connects Veterans and their loved ones with qualified, caring Dept. of Veterans Affairs responders."),
+
+        # --- CHILD & YOUTH SAFETY ---
+        ("Childhelp National Child Abuse Hotline", "1-800-422-4453", "Text 1-800-422-4453", 
+        "Professional crisis counselors available 24/7 to provide assistance in over 170 languages to victims and witnesses."),
+        ("National Runaway Safeline", "1-800-786-2929", "Text 66008", 
+        "Confidential assets for runaway and homeless youth, including crisis intervention and help finding a safe way home."),
+        ("National Center for Missing & Exploited Children", "1-800-843-5678", "N/A", 
+        "24-hour call center for reporting missing children or sightings of children depicted in posters."),
+
+        # --- HUMAN TRAFFICKING & EXPLOITATION ---
+        ("National Human Trafficking Hotline", "1-888-373-7888", "Text 233733", 
+        "Connects victims and survivors of sex and labor trafficking with services and support; available in 200+ languages."),
+
+        # --- MEDICAL & HEALTH ---
+        ("Poison Control Help Line", "1-800-222-1222", "N/A", 
+        "Immediate, free, and expert help for poison emergencies and prevention info from doctors and nurses."),
+        ("National Eating Disorders Association (NEDA)", "1-800-931-2237", "Text NEDA to 741741", 
+        "Provides support, resources, and treatment options for individuals and families affected by eating disorders."),
+
+        # --- LEGAL & DISASTER ---
+        ("Disaster Distress Helpline", "1-800-985-5990", "Text talkwithus to 66746", 
+        "Dedicated to providing immediate crisis counseling for people who are experiencing emotional distress related to any natural or human-caused disaster."),
+        ("Eldercare Locator", "1-800-677-1116", "N/A", 
+        "Public service that connects older adults and their families to local services including meals, home care, and transportation.")
     ]
 
     cur.executemany(
