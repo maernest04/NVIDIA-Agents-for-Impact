@@ -1,0 +1,49 @@
+Crisis Hotline Router Agent
+NVIDIA Agents for Impact Hackathon — SJSU, March 16 2026
+
+WHAT IT DOES
+A compassionate AI agent that helps people find the right crisis
+resource at the moment they need it most, without knowing what
+to search for.
+
+User describes their situation in plain language.
+Nemotron (via NIM) reasons about the situation and classifies it.
+The agent calls a lookup_hotline tool to retrieve 1-3 resources.
+Returns the hotline(s), hours, and a short plain-language call script.
+
+TECH STACK
+- LLM: nvidia/nemotron-3-super-120b-a12b via NVIDIA NIM
+- API: https://integrate.api.nvidia.com/v1 (OpenAI-compatible)
+- Client: openai Python SDK
+- Tool calling: Native OpenAI-style tools + tool_choice
+- Language: Python
+- UI: CLI (Gradio/Streamlit to be added later)
+
+FILES
+main.py      - Agent loop (Nemotron + tool dispatch)
+tools.py     - lookup_hotline() + TOOL_SCHEMA
+data.py      - Hotline registry (categories + phone numbers + scripts)
+prompts.py   - System prompt (safety rules, escalation logic)
+
+CATEGORIES COVERED
+mental_health, suicide, domestic_violence, substance_use,
+homelessness, human_trafficking, general_crisis, emergency
+
+AGENT LOOP
+1. Send user message + tool schema to Nemotron via NIM
+2. Nemotron returns tool_call: lookup_hotline(categories=[...])
+3. Python runs lookup, returns JSON result to Nemotron
+4. Nemotron returns final compassionate response with resource block
+
+KEY SAFETY RULES (in system prompt)
+- Always call the tool before responding
+- Never diagnose or give clinical advice
+- If immediate danger mentioned, always include "emergency" category
+- End every response with: "For immediate emergencies, call 911."
+
+JUDGE PITCH
+Our agent helps people find the right crisis resource at the moment
+they need it most — without having to know what to search for.
+It uses Nemotron's native tool calling to classify a person's
+situation, look up the right hotline, and return a short human
+script for what to say when you call.
