@@ -14,8 +14,8 @@ const Header = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
         {/* Spartan Logo Concept */}
-        <div className="flex h-12 w-12 bg-white text-[#0055A2] rounded-full items-center justify-center shrink-0 shadow-inner border-2 border-[#E5A823]">
-          <Shield size={24} className="fill-[#0055A2]" />
+        <div className="flex h-12 w-12 bg-white rounded-full items-center justify-center shrink-0 shadow-inner border-2 border-[#E5A823] overflow-hidden">
+          <img src="/spartan-avatar.png" alt="Spartan AI" className="w-full h-full object-cover" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight leading-tight m-0 drop-shadow-sm">
