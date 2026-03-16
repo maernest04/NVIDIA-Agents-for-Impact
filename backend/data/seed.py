@@ -66,9 +66,9 @@ def seed():
         ("The Trevor Project (LGBTQ+)", "1-866-488-7386", "Text START to 678-678", "24/7 crisis intervention and suicide prevention for LGBTQ young people."),
         ("National Domestic Violence Hotline", "1-800-799-7233", "Text START to 88788", "24/7 support for anyone experiencing domestic violence or seeking help."),
         ("RAINN Sexual Assault Hotline", "1-800-656-4673", "N/A", "Confidential support for survivors of sexual assault and their loved ones."),
-        ("SAMHSA National Helpline", "1-800-662-4357", "N/A", "24/7 treatment referral and info for substance use and mental health disorders.")
+        ("SAMHSA National Helpline", "1-800-662-4357", "N/A", "24/7 treatment referral and info for substance use and mental health disorders."),
 
-            # --- VETERANS & MILITARY ---
+        # --- VETERANS & MILITARY ---
         ("Veterans Crisis Line", "988 (Press 1)", "Text 838255", 
         "Connects Veterans and their loved ones with qualified, caring Dept. of Veterans Affairs responders."),
 
