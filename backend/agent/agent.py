@@ -3,6 +3,7 @@ from langchain_core.messages import HumanMessage
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 from agent.tools import get_resource_by_name, search_resources
+from config import settings
 
 MODEL = "nvidia/nemotron-3-super-120b-a12b"
 
@@ -32,7 +33,12 @@ Guidelines:
 
 
 def build_agent():
-    llm = ChatNVIDIA(model=MODEL, temperature=0.2)
+    llm = ChatNVIDIA(
+        model=MODEL,
+        api_key=settings.nemotron_api_key,
+        base_url=settings.nemotron_base_url,
+        temperature=0.2,
+    )
     tools = [search_resources, get_resource_by_name]
     return create_agent(llm, tools, system_prompt=SYSTEM_PROMPT)
 

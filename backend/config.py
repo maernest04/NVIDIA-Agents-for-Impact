@@ -1,12 +1,18 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+# .env lives at the project root (one level above backend/)
+_ENV_FILE = Path(__file__).parent.parent / ".env"
 
 
 class Settings(BaseSettings):
     app_name: str = "NVIDIA Agents for Impact"
     debug: bool = False
-    nvidia_api_key: str = ""
+    nemotron_api_key: str = ""
+    nemotron_base_url: str = "https://integrate.api.nvidia.com/v1"
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": str(_ENV_FILE)}
 
 
 settings = Settings()
