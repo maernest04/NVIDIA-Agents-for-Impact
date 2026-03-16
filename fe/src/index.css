@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --sjsu-blue: #0055A2;
+  --sjsu-gold: #E5A823;
+  --sjsu-gray: #939597;
+  --sjsu-blue-dark: #003d75;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background-color: #f8fafc; /* slate-50 */
+  color: #0f172a; /* slate-900 */
+}
+
+/* Remove default Vite styles as we are using Tailwind entirely */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
