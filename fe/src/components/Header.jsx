@@ -22,7 +22,7 @@ const Header = () => {
             SJSU Crisis Router
           </h1>
           <p className="text-white/80 text-sm m-0 font-medium">
-            Confidential Spartan Support
+            Confidential support — campus & national resources when you're not sure where to turn
           </p>
         </div>
       </div>

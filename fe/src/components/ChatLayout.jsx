@@ -35,7 +35,7 @@ const ChatLayout = ({ messages, thinkingState, onSendMessage, status, agentTrace
               </div>
               <h2 className="text-2xl font-bold text-[#0055A2] mb-3">How can we support you today?</h2>
               <p className="text-[#939597] font-medium max-w-md mb-8">
-                Describe your situation below. We'll connect you directly to confidential resources, local services, and call scripts.
+                No judgment — many students feel nervous reaching out. Describe your situation in your own words. We'll match you to the right campus or national resource and give you a message you can send or say.
               </p>
 
               {/* Suggestion Chips */}
