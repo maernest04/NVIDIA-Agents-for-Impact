@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 import sqlite3
 from typing import Any
+=======
+from typing import List, Optional
+>>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -20,6 +24,7 @@ def _get_agent():
     return _agent
 
 
+<<<<<<< HEAD
 def _search_resources(query: str, limit: int = 3) -> list[dict[str, Any]]:
     """Search the DB and map rows to the shape ResourceCard expects."""
     con = sqlite3.connect(DB_PATH)
@@ -51,10 +56,16 @@ def _search_resources(query: str, limit: int = 3) -> list[dict[str, Any]]:
             ),
         })
     return results
+=======
+class HistoryMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+>>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c
 
 
 class ChatRequest(BaseModel):
     message: str
+    history: Optional[List[HistoryMessage]] = None
 
 
 class ChatResponse(BaseModel):
@@ -66,8 +77,19 @@ class ChatResponse(BaseModel):
 def chat(request: ChatRequest):
     if not request.message.strip():
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
+<<<<<<< HEAD
 
     response_text = run_agent(_get_agent(), request.message)
     resources = _search_resources(request.message)
 
     return ChatResponse(response=response_text, resources=resources)
+=======
+    
+    # Convert history to the format the agent expects
+    history = []
+    if request.history:
+        history = [{"role": h.role, "content": h.content} for h in request.history]
+    
+    response = run_agent(_get_agent(), request.message, history=history)
+    return ChatResponse(response=response)
+>>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c

@@ -1,5 +1,7 @@
+from typing import List
+
 from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 from agent.tools import (
@@ -64,6 +66,20 @@ def build_agent():
     return create_agent(llm, tools, system_prompt=SYSTEM_PROMPT)
 
 
-def run_agent(agent, message: str) -> str:
-    result = agent.invoke({"messages": [HumanMessage(content=message)]})
+def run_agent(agent, message: str, history: List[dict] = None) -> str:
+    """Run the agent with the current message and optional conversation history."""
+    messages = []
+
+    # Add prior conversation history so the agent has context
+    if history:
+        for h in history:
+            if h["role"] == "user":
+                messages.append(HumanMessage(content=h["content"]))
+            elif h["role"] == "assistant":
+                messages.append(AIMessage(content=h["content"]))
+
+    # Add the current user message
+    messages.append(HumanMessage(content=message))
+
+    result = agent.invoke({"messages": messages})
     return result["messages"][-1].content
