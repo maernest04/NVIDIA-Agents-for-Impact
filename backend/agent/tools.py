@@ -217,40 +217,51 @@ def get_resource_by_name(name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 4: Draft outreach message
+# Tool 4: Draft outreach message — Nemotron generates personalized text
 # ---------------------------------------------------------------------------
+
+_DRAFT_SYSTEM = """\
+You are a compassionate student advocate helping an SJSU student reach out for support.
+Write two things based on their situation:
+
+1. A ready-to-send EMAIL (warm, concise, 3–4 sentences max)
+2. A PHONE SCRIPT (2–3 sentences they can read aloud when they call)
+
+Format your response EXACTLY like this:
+
+**EMAIL DRAFT**
+Subject: [subject line]
+
+[email body — use [Your Name] and [Student ID – optional] as placeholders]
+
+---
+
+**WHEN YOU CALL**
+[phone script — conversational, first-person, warm tone]
+
+Rules:
+- Never be clinical or cold. Write like a caring advisor.
+- Keep both sections brief — students are often in distress and need clarity.
+- The email subject should be specific but not expose sensitive details.
+- Do NOT add any other sections or commentary outside this format.\
+"""
+
 
 @tool
 def draft_outreach_message(resource_name: str, user_situation: str) -> str:
-    """Draft a ready-to-send email and phone script the user can use to contact a resource.
+    """Use Nemotron to draft a personalized, empathetic email and phone script.
 
     Call this as the FINAL step (after searching for resources) for non-immediate situations.
-    Gives the user a concrete artifact they can copy and use right now.
+    Nemotron generates contextually aware outreach text based on the student's specific situation.
     Do NOT call this for immediate/emergency situations — focus on 988/911 instead.
     """
-    short_situation = user_situation[:120].rstrip()
-
-    email_draft = f"""\
-**Subject:** Request for Support – SJSU Student
-
-Hi,
-
-My name is [Your Name], and I am a student at San Jose State University (Student ID: [optional]).
-
-I am reaching out because {short_situation}{"..." if len(user_situation) > 120 else ""}
-
-I would appreciate any guidance, an appointment, or information about next steps. Please let me know how best to connect.
-
-Thank you,
-[Your Name]
-[Phone Number – optional]
-[Email Address]\
-"""
-
-    phone_script = (
-        f"When you call **{resource_name}**, you can say:\n\n"
-        f"\"Hi, I'm an SJSU student. I'm reaching out because {short_situation[:80]}... "
-        "I'd like to get some support — can you help me or point me in the right direction?\""
+    llm = _reasoning_llm()
+    prompt = (
+        f"The student needs to contact: **{resource_name}**\n\n"
+        f"Their situation: {user_situation[:300]}"
     )
-
-    return f"{email_draft}\n\n---\n\n{phone_script}"
+    response = llm.invoke([
+        SystemMessage(content=_DRAFT_SYSTEM),
+        HumanMessage(content=prompt),
+    ])
+    return response.content

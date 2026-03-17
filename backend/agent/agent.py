@@ -1,7 +1,10 @@
-from typing import List
+import json
+from typing import List, Tuple
 
-from langchain.agents import create_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 from agent.tools import (
@@ -21,7 +24,7 @@ community members at San Jose State University (SJSU). Your role is to help \
 people find the right campus resource or crisis hotline for what they are \
 experiencing — and to give them a concrete next step they can take right now.
 
-You have four tools. You MUST follow this workflow for every message:
+You have five tools. You MUST follow this workflow for every message:
 
 STEP 1 — ALWAYS call assess_urgency(message) first, with the user's exact message.
   - If urgency = "immediate": respond with 988 and/or 911 immediately. Express \
@@ -37,7 +40,7 @@ STEP 3 — Call search_resources(query) for each recommended search term (1–3 
 
 STEP 4 — For non-immediate situations, call draft_outreach_message(resource_name, \
 user_situation) using the single most relevant resource.
-  - This gives the user a ready-to-send email draft and phone script.
+  - Nemotron will generate a personalized email draft and phone script for the student.
 
 Response format:
 - Start with one short empathetic sentence acknowledging what the person shared.
@@ -55,31 +58,75 @@ Other rules:
 """
 
 
-def build_agent():
+def build_agent() -> AgentExecutor:
     llm = ChatNVIDIA(
         model=MODEL,
         api_key=settings.nemotron_api_key,
         base_url=settings.nemotron_base_url,
         temperature=0.2,
     )
-    tools = [assess_urgency, triage_situation, search_resources, get_resource_by_name, draft_outreach_message]
-    return create_agent(llm, tools, system_prompt=SYSTEM_PROMPT)
+    tools = [
+        assess_urgency,
+        triage_situation,
+        search_resources,
+        get_resource_by_name,
+        draft_outreach_message,
+    ]
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        MessagesPlaceholder("chat_history", optional=True),
+        ("human", "{input}"),
+        MessagesPlaceholder("agent_scratchpad"),
+    ])
+    agent = create_tool_calling_agent(llm, tools, prompt)
+    return AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=8)
 
 
-def run_agent(agent, message: str, history: List[dict] = None) -> str:
-    """Run the agent with the current message and optional conversation history."""
-    messages = []
+class _ToolCallCollector(BaseCallbackHandler):
+    """Captures tool names and triage categories during an agent run."""
 
-    # Add prior conversation history so the agent has context
+    def __init__(self):
+        self.tool_calls: List[str] = []
+        self.categories: List[str] = []
+        self._last_tool: str = ""
+
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        name = serialized.get("name", "")
+        self.tool_calls.append(name)
+        self._last_tool = name
+
+    def on_tool_end(self, output, **kwargs):
+        if self._last_tool == "triage_situation":
+            try:
+                parsed = json.loads(str(output))
+                self.categories = parsed.get("identified_categories", [])
+            except Exception:
+                pass
+
+
+def run_agent(
+    executor: AgentExecutor,
+    message: str,
+    history: List[dict] = None,
+) -> Tuple[str, List[str], List[str]]:
+    """Run the agent synchronously.
+
+    Returns:
+        (response_text, tool_calls, categories)
+        - tool_calls: ordered list of tool names the agent invoked
+        - categories: resource categories identified by triage_situation
+    """
+    chat_history = []
     if history:
         for h in history:
             if h["role"] == "user":
-                messages.append(HumanMessage(content=h["content"]))
+                chat_history.append(HumanMessage(content=h["content"]))
             elif h["role"] == "assistant":
-                messages.append(AIMessage(content=h["content"]))
+                chat_history.append(AIMessage(content=h["content"]))
 
-    # Add the current user message
-    messages.append(HumanMessage(content=message))
-
-    result = agent.invoke({"messages": messages})
-    return result["messages"][-1].content
+    collector = _ToolCallCollector()
+    result = executor.invoke(
+        {"input": message, "chat_history": chat_history},
+        config={"callbacks": [collector]},
+    )
+    return result["output"], collector.tool_calls, collector.categories

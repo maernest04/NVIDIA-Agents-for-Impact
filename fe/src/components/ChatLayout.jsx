@@ -4,7 +4,7 @@ import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import AgentTrace from './AgentTrace';
 
-const ChatLayout = ({ messages, thinkingState, onSendMessage, status, simulatedCategories }) => {
+const ChatLayout = ({ messages, thinkingState, onSendMessage, status, agentTrace }) => {
   const scrollRef = useRef(null);
 
   // Auto-scroll to bottom on new messages or streaming updates
@@ -81,10 +81,10 @@ const ChatLayout = ({ messages, thinkingState, onSendMessage, status, simulatedC
 
       <ChatInput onSendMessage={onSendMessage} isTyping={!!thinkingState} />
       
-      <AgentTrace 
-        isVisible={true} 
-        status={status} 
-        simulatedCategories={simulatedCategories}
+      <AgentTrace
+        isVisible={true}
+        status={status}
+        agentTrace={agentTrace}
       />
     </div>
   );

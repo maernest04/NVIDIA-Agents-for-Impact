@@ -1,15 +1,12 @@
-<<<<<<< HEAD
-import sqlite3
-from typing import Any
-=======
+import asyncio
+import json
 from typing import List, Optional
->>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agent.agent import build_agent, run_agent
-from database import DB_PATH
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -24,43 +21,9 @@ def _get_agent():
     return _agent
 
 
-<<<<<<< HEAD
-def _search_resources(query: str, limit: int = 3) -> list[dict[str, Any]]:
-    """Search the DB and map rows to the shape ResourceCard expects."""
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    rows = con.execute(
-        """
-        SELECT id, resource_name, phone_number, email, description
-        FROM campus_resources
-        WHERE resource_name LIKE ? OR description LIKE ?
-        LIMIT ?
-        """,
-        (f"%{query}%", f"%{query}%", limit),
-    ).fetchall()
-    con.close()
-
-    results = []
-    for r in rows:
-        desc = r["description"] or ""
-        availability = "24/7" if "24/7" in desc else "Call for current hours"
-        results.append({
-            "id": str(r["id"]),
-            "name": r["resource_name"],
-            "phone": r["phone_number"] or "Contact for info",
-            "availability": availability,
-            "whyItHelps": desc,
-            "callScript": (
-                f"Hi, I'm reaching out because I need help. "
-                f"I was referred to {r['resource_name']} for support."
-            ),
-        })
-    return results
-=======
 class HistoryMessage(BaseModel):
-    role: str  # "user" or "assistant"
+    role: str   # "user" or "assistant"
     content: str
->>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c
 
 
 class ChatRequest(BaseModel):
@@ -68,28 +31,58 @@ class ChatRequest(BaseModel):
     history: Optional[List[HistoryMessage]] = None
 
 
-class ChatResponse(BaseModel):
-    response: str
-    resources: list[dict[str, Any]]
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event)}\n\n"
 
 
-@router.post("/", response_model=ChatResponse)
-def chat(request: ChatRequest):
+@router.post("/")
+async def chat(request: ChatRequest):
     if not request.message.strip():
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
-<<<<<<< HEAD
 
-    response_text = run_agent(_get_agent(), request.message)
-    resources = _search_resources(request.message)
+    history = (
+        [{"role": h.role, "content": h.content} for h in request.history]
+        if request.history
+        else []
+    )
 
-    return ChatResponse(response=response_text, resources=resources)
-=======
-    
-    # Convert history to the format the agent expects
-    history = []
-    if request.history:
-        history = [{"role": h.role, "content": h.content} for h in request.history]
-    
-    response = run_agent(_get_agent(), request.message, history=history)
-    return ChatResponse(response=response)
->>>>>>> cd8999264621a378b689b5a45bd1f0dffd6dd23c
+    async def generate():
+        loop = asyncio.get_event_loop()
+
+        # Run the synchronous LangChain agent in a thread pool so the event
+        # loop stays unblocked while Nemotron API calls are in flight.
+        try:
+            response_text, tool_calls, categories = await loop.run_in_executor(
+                None,
+                lambda: run_agent(_get_agent(), request.message, history),
+            )
+        except Exception as exc:
+            yield _sse({"type": "error", "message": str(exc)})
+            return
+
+        # 1. Emit real tool-call events so the frontend AgentTrace can display
+        #    the actual reasoning steps the agent took.
+        for tool_name in tool_calls:
+            yield _sse({"type": "tool_call", "tool": tool_name})
+
+        # 2. Emit the triage categories detected by Nemotron.
+        if categories:
+            yield _sse({"type": "categories", "categories": categories})
+
+        # 3. Stream the final response word-by-word via SSE so the frontend
+        #    can render it token-by-token without faking it with setInterval.
+        words = response_text.split(" ")
+        for word in words:
+            yield _sse({"type": "token", "content": word + " "})
+            await asyncio.sleep(0.03)
+
+        yield _sse({"type": "done"})
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

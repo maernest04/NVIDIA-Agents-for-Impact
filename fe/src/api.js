@@ -1,13 +1,17 @@
-const API_BASE = 'http://localhost:8000';
-
 /**
- * Send a user message to the backend agent with conversation history.
- * @param {string} message - The user's current message text.
- * @param {Array<{role: string, content: string}>} history - Previous messages.
- * @returns {Promise<string>} - The AI agent's response text.
+ * Send a user message to the backend agent and stream the response via SSE.
+ *
+ * @param {string} message - The user's current message.
+ * @param {Array<{role: string, content: string}>} history - Prior conversation turns.
+ * @param {(event: object) => void} onEvent - Called for each SSE event:
+ *   { type: 'tool_call', tool: string }
+ *   { type: 'categories', categories: string[] }
+ *   { type: 'token', content: string }
+ *   { type: 'done' }
+ *   { type: 'error', message: string }
  */
-export async function sendChatMessage(message, history = []) {
-  const res = await fetch(`${API_BASE}/chat/`, {
+export async function sendChatMessage(message, history = [], onEvent) {
+  const res = await fetch('/chat/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, history }),
@@ -18,8 +22,31 @@ export async function sendChatMessage(message, history = []) {
     throw new Error(err.detail || `Server error: ${res.status}`);
   }
 
-  const data = await res.json();
-  return data.response;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE events are separated by double newlines
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop(); // keep any incomplete trailing chunk
+
+    for (const part of parts) {
+      const line = part.trim();
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        onEvent(event);
+      } catch {
+        // skip malformed events
+      }
+    }
+  }
 }
 
 /**
@@ -28,7 +55,7 @@ export async function sendChatMessage(message, history = []) {
  * @returns {Promise<Array>} - Array of resource objects.
  */
 export async function fetchResources(search) {
-  const url = new URL(`${API_BASE}/resources/`);
+  const url = new URL('/resources/', window.location.origin);
   if (search) url.searchParams.set('search', search);
 
   const res = await fetch(url);
