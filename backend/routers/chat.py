@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -16,8 +18,14 @@ def _get_agent():
     return _agent
 
 
+class HistoryMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
+    history: Optional[List[HistoryMessage]] = None
 
 
 class ChatResponse(BaseModel):
@@ -28,5 +36,11 @@ class ChatResponse(BaseModel):
 def chat(request: ChatRequest):
     if not request.message.strip():
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
-    response = run_agent(_get_agent(), request.message)
+    
+    # Convert history to the format the agent expects
+    history = []
+    if request.history:
+        history = [{"role": h.role, "content": h.content} for h in request.history]
+    
+    response = run_agent(_get_agent(), request.message, history=history)
     return ChatResponse(response=response)

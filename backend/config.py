@@ -2,8 +2,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings
 
-# .env lives at the project root (one level above backend/)
-_ENV_FILE = Path(__file__).parent.parent / ".env"
+# .env lives alongside this file in the backend/ directory
+_ENV_FILE = Path(__file__).parent / ".env"
 
 
 class Settings(BaseSettings):
