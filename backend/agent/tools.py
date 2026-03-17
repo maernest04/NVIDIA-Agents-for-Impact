@@ -5,8 +5,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-from backend.config import settings
-from backend.database import DB_PATH
+from config import settings
+from database import DB_PATH
 
 # Nano model for fast sub-calls inside tools — keeps latency acceptable
 # while still using Nemotron for genuine reasoning.

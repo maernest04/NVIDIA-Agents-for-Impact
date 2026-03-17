@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.database import get_db
+from database import get_db
 
 router = APIRouter(prefix="/resources", tags=["resources"])
 

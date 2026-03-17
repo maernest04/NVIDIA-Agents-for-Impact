@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.agent.agent import build_agent, run_agent
+from agent.agent import build_agent, run_agent
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

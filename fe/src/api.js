@@ -11,7 +11,7 @@
  *   { type: 'error', message: string }
  */
 export async function sendChatMessage(message, history = [], onEvent) {
-  const res = await fetch('/api/chat/', {
+  const res = await fetch('/chat/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, history }),
@@ -55,7 +55,7 @@ export async function sendChatMessage(message, history = [], onEvent) {
  * @returns {Promise<Array>} - Array of resource objects.
  */
 export async function fetchResources(search) {
-  const url = new URL('/api/resources/', window.location.origin);
+  const url = new URL('/resources/', window.location.origin);
   if (search) url.searchParams.set('search', search);
 
   const res = await fetch(url);
