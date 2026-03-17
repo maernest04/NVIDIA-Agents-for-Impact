@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import ResourceCard from './ResourceCard';
 
 const ChatMessage = ({ message }) => {
@@ -32,7 +33,22 @@ const ChatMessage = ({ message }) => {
                 ? 'bg-[#0055A2] text-white rounded-br-sm' 
                 : 'bg-white border border-slate-100 text-slate-800 rounded-bl-sm'
             }`}>
-              {message.text}
+              {isUser ? (
+                message.text
+              ) : (
+                <ReactMarkdown
+                  components={{
+                    p:      ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    strong: ({ children }) => <strong className="font-bold text-[#0055A2]">{children}</strong>,
+                    em:     ({ children }) => <em className="italic">{children}</em>,
+                    ul:     ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                    ol:     ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+                    li:     ({ children }) => <li className="leading-relaxed">{children}</li>,
+                  }}
+                >
+                  {message.text}
+                </ReactMarkdown>
+              )}
               {/* Blinking cursor while streaming */}
               {message.isStreaming && (
                 <span className="inline-block w-[2px] h-[1.1em] bg-[#0055A2] ml-1 animate-pulse align-text-bottom"></span>

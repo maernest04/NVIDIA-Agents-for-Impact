@@ -5,4 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/chat': 'http://localhost:8000',
+      '/resources': 'http://localhost:8000',
+      '/health': 'http://localhost:8000',
+    }
+  }
 })
