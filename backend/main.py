@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import settings
-from routers import chat, health, resources
+from backend.config import settings
+from backend.routers import chat, health, resources
 
 app = FastAPI(title=settings.app_name)
 

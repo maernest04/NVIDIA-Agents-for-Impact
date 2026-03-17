@@ -7,14 +7,14 @@ from typing import List, Tuple
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-from agent.tools import (
+from backend.agent.tools import (
     assess_urgency,
     draft_outreach_message,
     get_resource_by_name,
     search_resources,
     triage_situation,
 )
-from config import settings
+from backend.config import settings
 
 MODEL = "nvidia/nemotron-3-super-120b-a12b"
 MAX_ITERATIONS = 8
