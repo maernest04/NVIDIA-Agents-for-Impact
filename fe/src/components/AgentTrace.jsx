@@ -45,7 +45,7 @@ const AgentTrace = ({ isVisible, status, agentTrace = { toolCalls: [], categorie
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-slate-500 font-semibold mb-1">
               <Bot size={12} />
-              <span>ROUTER_AGENT</span>
+              <span>SAFELINE_AGENT</span>
             </div>
             <div className="pl-4 border-l-2 border-slate-200 text-slate-600">
               {status === 'empty'   && 'Waiting for user input...'}

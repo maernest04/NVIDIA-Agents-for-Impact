@@ -1,10 +1,10 @@
+"""
+LangChain-only agent: tool-calling loop with ChatNVIDIA (no LangGraph, no AgentExecutor).
+"""
 import json
 from typing import List, Tuple
 
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 from agent.tools import (
@@ -17,6 +17,7 @@ from agent.tools import (
 from config import settings
 
 MODEL = "nvidia/nemotron-3-super-120b-a12b"
+MAX_ITERATIONS = 8
 
 SYSTEM_PROMPT = """\
 You are a compassionate, non-judgmental resource assistant for students and \
@@ -61,75 +62,88 @@ Other rules:
 """
 
 
-def build_agent() -> AgentExecutor:
+TOOLS = [
+    assess_urgency,
+    triage_situation,
+    search_resources,
+    get_resource_by_name,
+    draft_outreach_message,
+]
+TOOLS_BY_NAME = {t.name: t for t in TOOLS}
+
+
+def build_agent():
+    """Return the bound LLM (with tools) for use in run_agent. No executor object."""
     llm = ChatNVIDIA(
         model=MODEL,
         api_key=settings.nemotron_api_key,
         base_url=settings.nemotron_base_url,
-        temperature=0.2,
+        temperature=1.0,
     )
-    tools = [
-        assess_urgency,
-        triage_situation,
-        search_resources,
-        get_resource_by_name,
-        draft_outreach_message,
-    ]
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder("chat_history", optional=True),
-        ("human", "{input}"),
-        MessagesPlaceholder("agent_scratchpad"),
-    ])
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=8)
-
-
-class _ToolCallCollector(BaseCallbackHandler):
-    """Captures tool names and triage categories during an agent run."""
-
-    def __init__(self):
-        self.tool_calls: List[str] = []
-        self.categories: List[str] = []
-        self._last_tool: str = ""
-
-    def on_tool_start(self, serialized, input_str, **kwargs):
-        name = serialized.get("name", "")
-        self.tool_calls.append(name)
-        self._last_tool = name
-
-    def on_tool_end(self, output, **kwargs):
-        if self._last_tool == "triage_situation":
-            try:
-                parsed = json.loads(str(output))
-                self.categories = parsed.get("identified_categories", [])
-            except Exception:
-                pass
+    return llm.bind_tools(TOOLS)
 
 
 def run_agent(
-    executor: AgentExecutor,
+    bound_llm,
     message: str,
     history: List[dict] = None,
 ) -> Tuple[str, List[str], List[str]]:
-    """Run the agent synchronously.
-
-    Returns:
-        (response_text, tool_calls, categories)
-        - tool_calls: ordered list of tool names the agent invoked
-        - categories: resource categories identified by triage_situation
     """
-    chat_history = []
+    Run the LangChain tool-calling loop: reason -> act -> observe until done.
+    Returns (response_text, tool_calls, categories).
+    """
+    messages: List = [SystemMessage(content=SYSTEM_PROMPT)]
+
     if history:
         for h in history:
             if h["role"] == "user":
-                chat_history.append(HumanMessage(content=h["content"]))
+                messages.append(HumanMessage(content=h["content"]))
             elif h["role"] == "assistant":
-                chat_history.append(AIMessage(content=h["content"]))
+                messages.append(AIMessage(content=h["content"]))
 
-    collector = _ToolCallCollector()
-    result = executor.invoke(
-        {"input": message, "chat_history": chat_history},
-        config={"callbacks": [collector]},
-    )
-    return result["output"], collector.tool_calls, collector.categories
+    messages.append(HumanMessage(content=message))
+
+    tool_calls_ordered: List[str] = []
+    categories: List[str] = []
+
+    for _ in range(MAX_ITERATIONS):
+        response = bound_llm.invoke(messages)
+        messages.append(response)
+
+        if not getattr(response, "tool_calls", None):
+            return (response.content or ""), tool_calls_ordered, categories
+
+        for tc in response.tool_calls:
+            if isinstance(tc, dict):
+                name = tc.get("name", "")
+                args = tc.get("args") or {}
+                tool_call_id = tc.get("id", "")
+            else:
+                name = getattr(tc, "name", "")
+                args = getattr(tc, "args", {}) or {}
+                tool_call_id = getattr(tc, "id", "")
+            tool_calls_ordered.append(name)
+
+            tool = TOOLS_BY_NAME.get(name)
+            if not tool:
+                result = f"Unknown tool: {name}"
+            else:
+                try:
+                    result = tool.invoke(args)
+                except Exception as e:
+                    result = f"Error: {e}"
+
+            if name == "triage_situation":
+                try:
+                    parsed = json.loads(result)
+                    categories = parsed.get("identified_categories", [])
+                except Exception:
+                    pass
+
+            messages.append(
+                ToolMessage(content=str(result), tool_call_id=tool_call_id)
+            )
+
+    # Max iterations reached; get one final response from the model
+    final = bound_llm.invoke(messages)
+    return (getattr(final, "content", None) or ""), tool_calls_ordered, categories

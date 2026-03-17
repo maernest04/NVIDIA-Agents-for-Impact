@@ -7,7 +7,7 @@ _ENV_FILE = Path(__file__).parent.parent / ".env"
 
 
 class Settings(BaseSettings):
-    app_name: str = "NVIDIA Agents for Impact"
+    app_name: str = "SJSU Safeline"
     debug: bool = False
     nemotron_api_key: str = ""
     nemotron_base_url: str = "https://integrate.api.nvidia.com/v1"

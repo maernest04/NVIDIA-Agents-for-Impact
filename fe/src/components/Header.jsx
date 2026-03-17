@@ -19,7 +19,7 @@ const Header = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight leading-tight m-0 drop-shadow-sm">
-            SJSU Crisis Router
+            SJSU Safeline
           </h1>
           <p className="text-white/80 text-sm m-0 font-medium">
             Confidential support — campus & national resources when you're not sure where to turn

@@ -5,7 +5,7 @@ Use my attached wireframe as the base layout reference, but improve it significa
 Build the **frontend only** for this hackathon project:
 
 ## Project
-**Crisis Hotline Router Agent**  
+**SJSU Safeline**  
 NVIDIA Agents for Impact Hackathon — SJSU, March 16 2026
 
 This app helps a person describe their situation in plain language, then shows the most relevant crisis support resources and a short call script for what to say.
@@ -68,7 +68,7 @@ The screen should support 3 main states:
 ## Required UX elements
 ### Header
 Include:
-- app title: **Crisis Hotline Router**
+- app title: **SJSU Safeline**
 - subtitle: **Find the right support without knowing what to search for.**
 - a visible but calm emergency note: **In immediate danger? Call 911 now.**
 

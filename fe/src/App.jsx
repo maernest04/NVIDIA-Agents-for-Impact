@@ -28,19 +28,12 @@ function App() {
       .map(m => ({ role: m.role, content: m.fullText || m.text }));
 
     const assistantId = generateId();
-    setMessages(prev => [...prev, {
-      id: assistantId,
-      role: 'assistant',
-      text: '',
-      fullText: '',
-      isStreaming: true,
-      resources: [],
-    }]);
+    // Don't add assistant message yet — only show "Thinking..." until first token
 
-    // Local accumulators — avoids stale closure issues with setState batching
     const liveToolCalls = [];
     let liveCategories = [];
     let liveText = '';
+    let assistantInList = false;
 
     try {
       await sendChatMessage(text, history, (event) => {
@@ -54,18 +47,40 @@ function App() {
 
         } else if (event.type === 'token') {
           liveText += event.content;
-          // Switch from "thinking" dots to live text render on first token
           setThinkingState('streaming');
-          setMessages(prev => prev.map(msg =>
-            msg.id === assistantId
-              ? { ...msg, text: liveText, fullText: liveText }
-              : msg
-          ));
+          if (!assistantInList) {
+            assistantInList = true;
+            setMessages(prev => [...prev, {
+              id: assistantId,
+              role: 'assistant',
+              text: liveText,
+              fullText: liveText,
+              isStreaming: true,
+              resources: [],
+            }]);
+          } else {
+            setMessages(prev => prev.map(msg =>
+              msg.id === assistantId
+                ? { ...msg, text: liveText, fullText: liveText }
+                : msg
+            ));
+          }
 
         } else if (event.type === 'done') {
-          setMessages(prev => prev.map(msg =>
-            msg.id === assistantId ? { ...msg, isStreaming: false } : msg
-          ));
+          if (!assistantInList) {
+            setMessages(prev => [...prev, {
+              id: assistantId,
+              role: 'assistant',
+              text: liveText,
+              fullText: liveText,
+              isStreaming: false,
+              resources: [],
+            }]);
+          } else {
+            setMessages(prev => prev.map(msg =>
+              msg.id === assistantId ? { ...msg, isStreaming: false } : msg
+            ));
+          }
           setThinkingState(null);
           setStatus('results');
 
@@ -75,16 +90,24 @@ function App() {
       });
     } catch (err) {
       console.error('Chat error:', err);
-      setMessages(prev => prev.map(msg =>
-        msg.id === assistantId
-          ? {
-              ...msg,
-              text: `I'm sorry, I wasn't able to connect right now. If you need immediate help, call **988** (Suicide & Crisis Lifeline) or **911** for emergencies.\n\nError: ${err.message}`,
-              fullText: '',
-              isStreaming: false,
-            }
-          : msg
-      ));
+      const errorText = `I'm sorry, I wasn't able to connect right now. If you need immediate help, call **988** (Suicide & Crisis Lifeline) or **911** for emergencies.\n\nError: ${err.message}`;
+      setMessages(prev => {
+        if (assistantInList) {
+          return prev.map(msg =>
+            msg.id === assistantId
+              ? { ...msg, text: errorText, fullText: '', isStreaming: false }
+              : msg
+          );
+        }
+        return [...prev, {
+          id: assistantId,
+          role: 'assistant',
+          text: errorText,
+          fullText: '',
+          isStreaming: false,
+          resources: [],
+        }];
+      });
       setThinkingState(null);
       setStatus('empty');
     }
